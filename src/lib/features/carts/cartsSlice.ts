@@ -34,6 +34,7 @@ export type CartItem = {
   variantId?: string;
   size?: string;
   color?: string;
+  stock?: number;
 };
 
 export type Cart = {
@@ -85,6 +86,14 @@ export const cartsSlice = createSlice({
       );
 
       if (isItemInCart) {
+        const stockLimit = action.payload.stock ?? isItemInCart.stock;
+        const newQuantity = stockLimit
+          ? Math.min(action.payload.quantity + isItemInCart.quantity, stockLimit)
+          : action.payload.quantity + isItemInCart.quantity;
+        const addedQuantity = newQuantity - isItemInCart.quantity;
+
+        if (addedQuantity <= 0) return;
+
         state.cart = {
           ...state.cart,
           items: state.cart.items.map((eachCartItem) => {
@@ -100,16 +109,16 @@ export const cartsSlice = createSlice({
 
             return {
               ...isItemInCart,
-              quantity: action.payload.quantity + isItemInCart.quantity,
+              quantity: newQuantity,
             };
           }),
-          totalQuantities: state.cart.totalQuantities + action.payload.quantity,
+          totalQuantities: state.cart.totalQuantities + addedQuantity,
         };
         state.totalPrice =
-          state.totalPrice + action.payload.price * action.payload.quantity;
+          state.totalPrice + action.payload.price * addedQuantity;
         state.adjustedTotalPrice =
           state.adjustedTotalPrice +
-          calcAdjustedTotalPrice(action.payload.price, action.payload);
+          calcAdjustedTotalPrice(action.payload.price, action.payload, addedQuantity);
         return;
       }
 

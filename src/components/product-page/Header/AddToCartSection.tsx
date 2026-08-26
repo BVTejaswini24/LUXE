@@ -20,7 +20,11 @@ const AddToCartSection = ({
 
   return (
     <div className="fixed md:relative w-full bg-white border-t md:border-none border-black/5 bottom-0 left-0 p-4 md:p-0 z-10 flex items-center justify-between sm:justify-start md:justify-center">
-      <CartCounter onAdd={setQuantity} onRemove={setQuantity} />
+      <CartCounter
+        onAdd={setQuantity}
+        onRemove={setQuantity}
+        max={typeof data.stock === "number" ? data.stock : undefined}
+      />
       <AddToCartBtn
         data={{ ...data, quantity }}
         selectedSize={selectedSize}

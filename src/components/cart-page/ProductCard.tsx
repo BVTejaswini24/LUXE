@@ -13,6 +13,7 @@ import {
   removeCartItem,
 } from "@/lib/features/carts/cartsSlice";
 import { useAppDispatch } from "@/lib/hooks/redux";
+import { products } from "@/lib/data/products";
 
 type ProductCardProps = {
   data: CartItem;
@@ -20,6 +21,9 @@ type ProductCardProps = {
 
 const ProductCard = ({ data }: ProductCardProps) => {
   const dispatch = useAppDispatch();
+  const productData = products.find((p) => p.id === data.id);
+  const stock = productData?.stock;
+  const isLowStock = typeof stock === "number" && stock > 0 && stock <= 5;
 
   return (
     <div className="flex items-start space-x-4">
@@ -112,25 +116,33 @@ const ProductCard = ({ data }: ProductCardProps) => {
               )
             )}
           </div>
-          <CartCounter
-            initialValue={data.quantity}
-            onAdd={() => dispatch(addToCart({ ...data, quantity: 1 }))}
-            onRemove={() =>
-              data.quantity === 1
-                ? dispatch(
-                    remove({
-                      id: data.id,
-                      attributes: data.attributes,
-                      quantity: data.quantity,
-                    })
-                  )
-                : dispatch(
-                    removeCartItem({ id: data.id, attributes: data.attributes })
-                  )
-            }
-            isZeroDelete
-            className="px-5 py-3 max-h-8 md:max-h-10 min-w-[105px] max-w-[105px] sm:max-w-32"
-          />
+          <div className="flex items-center gap-2">
+            {isLowStock && (
+              <span className="text-[10px] xl:text-xs text-amber-600 font-medium whitespace-nowrap">
+                Only {stock} left
+              </span>
+            )}
+            <CartCounter
+              initialValue={data.quantity}
+              max={typeof stock === "number" ? stock : undefined}
+              onAdd={() => dispatch(addToCart({ ...data, quantity: 1, stock }))}
+              onRemove={() =>
+                data.quantity === 1
+                  ? dispatch(
+                      remove({
+                        id: data.id,
+                        attributes: data.attributes,
+                        quantity: data.quantity,
+                      })
+                    )
+                  : dispatch(
+                      removeCartItem({ id: data.id, attributes: data.attributes })
+                    )
+              }
+              isZeroDelete
+              className="px-5 py-3 max-h-8 md:max-h-10 min-w-[105px] max-w-[105px] sm:max-w-32"
+            />
+          </div>
         </div>
       </div>
     </div>
