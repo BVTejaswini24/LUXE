@@ -34,6 +34,14 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import SpinnerLoader from "@/components/ui/SpinnerLoader";
+import { cn } from "@/lib/utils";
+
+const GENDER_TABS = [
+  { label: "All", value: "" },
+  { label: "Women", value: "women" },
+  { label: "Men", value: "men" },
+  { label: "Kids", value: "kids" },
+] as const;
 
 function readSearchParams(
   sp: ReturnType<typeof useSearchParams>
@@ -122,6 +130,35 @@ function ShopContent() {
       <div className="max-w-frame mx-auto px-4 xl:px-0">
         <hr className="h-[1px] border-t-black/10 mb-5 sm:mb-6" />
         <BreadcrumbShop />
+
+        <div className="flex items-center gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1">
+          {GENDER_TABS.map((tab) => {
+            const isActive =
+              tab.value === ""
+                ? filters.gender.length === 0
+                : filters.gender.length === 1 && filters.gender[0] === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() =>
+                  updateFilter({
+                    gender: tab.value ? [tab.value] : [],
+                  })
+                }
+                className={cn(
+                  "px-5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                  isActive
+                    ? "bg-black text-white"
+                    : "bg-[#F0F0F0] text-black/60 hover:text-black"
+                )}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex md:space-x-5 items-start">
           <div className="hidden md:block min-w-[295px] max-w-[295px] border border-black/10 rounded-[20px] px-5 md:px-6 py-5 space-y-5 md:space-y-6">
             <div className="flex items-center justify-between">

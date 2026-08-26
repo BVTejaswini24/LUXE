@@ -42,13 +42,26 @@ const ReviewsContent = ({ product }: ReviewsContentProps) => {
   }>({});
   const REVIEWS_PER_PAGE = 4;
   const [visibleCount, setVisibleCount] = useState(REVIEWS_PER_PAGE);
+  const [sortBy, setSortBy] = useState("latest");
 
   const allReviews = useMemo(() => {
     const staticReviews = reviewsData.filter(
       (r) => r.productId === product?.id
     );
-    return [...staticReviews, ...submittedReviews];
-  }, [product?.id, submittedReviews]);
+    const combined = [...staticReviews, ...submittedReviews];
+
+    if (sortBy === "oldest") {
+      return [...combined].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+    }
+    if (sortBy === "latest") {
+      return [...combined].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+    }
+    return combined;
+  }, [product?.id, submittedReviews, sortBy]);
 
   const reviewCount = product?.reviewCount ?? 0;
 
@@ -102,7 +115,13 @@ const ReviewsContent = ({ product }: ReviewsContentProps) => {
           </span>
         </div>
         <div className="flex items-center space-x-2.5">
-          <Select defaultValue="latest">
+          <Select
+            value={sortBy}
+            onValueChange={(value) => {
+              setSortBy(value);
+              setVisibleCount(REVIEWS_PER_PAGE);
+            }}
+          >
             <SelectTrigger className="min-w-[120px] font-medium text-xs sm:text-base px-4 py-3 sm:px-5 sm:py-4 text-black bg-[#F0F0F0] border-none rounded-full h-12">
               <SelectValue />
             </SelectTrigger>

@@ -138,7 +138,11 @@ export default function CheckoutPage() {
 
   const updatePaymentMethod = useCallback((method: PaymentMethod) => {
     setForm((prev) => ({ ...prev, paymentMethod: method }));
-    setErrors({ contact: {}, shipping: {}, card: {}, upi: {} });
+    setErrors((prev) => ({
+      ...prev,
+      card: {},
+      upi: {},
+    }));
   }, []);
 
   const updateCard = useCallback(
