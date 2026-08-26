@@ -13,11 +13,12 @@ import {
 } from "@/components/ui/navigation-menu";
 import { MenuItem } from "./MenuItem";
 import Image from "next/image";
-import InputGroup from "@/components/ui/input-group";
 import ResTopNavbar from "./ResTopNavbar";
 import CartBtn from "./CartBtn";
 import WishlistBtn from "./WishlistBtn";
 import AccountBtn from "./AccountBtn";
+import SearchBar from "./SearchBar";
+import MobileSearchSheet from "./MobileSearchSheet";
 
 const data: NavMenu = [
   {
@@ -44,22 +45,6 @@ const data: NavMenu = [
 ];
 
 const TopNavbar = () => {
-  const router = useRouter();
-  const [searchValue, setSearchValue] = useState("");
-
-  const handleSearch = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const q = searchValue.trim();
-      if (q) {
-        router.push(`/shop?search=${encodeURIComponent(q)}`);
-      } else {
-        router.push("/shop");
-      }
-    },
-    [searchValue, router]
-  );
-
   return (
     <nav className="sticky top-0 bg-white z-20">
       <div className="flex relative max-w-frame mx-auto items-center justify-between md:justify-start py-5 md:py-6 px-4 xl:px-0">
@@ -91,39 +76,11 @@ const TopNavbar = () => {
             ))}
           </NavigationMenuList>
         </NavigationMenu>
-        <form onSubmit={handleSearch} className="hidden md:flex mr-3 lg:mr-10">
-          <InputGroup className="bg-[#F0F0F0]">
-            <InputGroup.Text>
-              <Image
-                priority
-                src="/icons/search.svg"
-                height={20}
-                width={20}
-                alt="search"
-                className="min-w-5 min-h-5"
-              />
-            </InputGroup.Text>
-            <InputGroup.Input
-              type="search"
-              name="search"
-              placeholder="Search for products..."
-              className="bg-transparent placeholder:text-black/40"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-          </InputGroup>
-        </form>
+        <div className="hidden md:flex mr-3 lg:mr-10 flex-1 max-w-md">
+          <SearchBar />
+        </div>
         <div className="flex items-center">
-          <Link href="/shop" className="block md:hidden mr-[14px] p-1">
-            <Image
-              priority
-              src="/icons/search-black.svg"
-              height={100}
-              width={100}
-              alt="search"
-              className="max-w-[22px] max-h-[22px]"
-            />
-          </Link>
+          <MobileSearchSheet />
           <WishlistBtn />
           <CartBtn />
           <AccountBtn />
