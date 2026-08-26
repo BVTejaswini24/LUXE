@@ -116,6 +116,35 @@ const Header = ({ data }: { data: Product }) => {
           <p className="text-sm sm:text-base text-black/60 mb-5">
             {data.description}
           </p>
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {data.gender && data.gender !== "unisex" && (
+              <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-[#F0F0F0] text-black/60 capitalize">
+                {data.gender}
+              </span>
+            )}
+            {data.category && (
+              <span className="text-xs sm:text-sm px-3 py-1 rounded-full bg-[#F0F0F0] text-black/60 capitalize">
+                {data.category.replace(/-/g, " ")}
+              </span>
+            )}
+            {typeof data.stock === "number" && (
+              <span
+                className={`text-xs sm:text-sm px-3 py-1 rounded-full ${
+                  data.stock > 5
+                    ? "bg-green-50 text-green-700"
+                    : data.stock > 0
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-red-50 text-red-700"
+                }`}
+              >
+                {data.stock > 5
+                  ? "In Stock"
+                  : data.stock > 0
+                    ? `Only ${data.stock} left`
+                    : "Out of Stock"}
+              </span>
+            )}
+          </div>
           <hr className="h-[1px] border-t-black/10 mb-5" />
           <ColorSelection
             colors={data.colors}

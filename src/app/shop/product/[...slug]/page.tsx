@@ -29,7 +29,30 @@ export default function ProductPage({
         <Tabs product={productData} />
       </div>
       <div className="mb-[50px] sm:mb-20">
-        <ProductListSec title="You might also like" data={products.filter((p) => p.id !== productData.id).slice(0, 4)} />
+        <ProductListSec
+          title="You might also like"
+          data={
+            products
+              .filter(
+                (p) =>
+                  p.id !== productData.id &&
+                  (p.category === productData.category ||
+                    p.gender === productData.gender)
+              )
+              .slice(0, 4).length > 0
+              ? products
+                  .filter(
+                    (p) =>
+                      p.id !== productData.id &&
+                      (p.category === productData.category ||
+                        p.gender === productData.gender)
+                  )
+                  .slice(0, 4)
+              : products
+                  .filter((p) => p.id !== productData.id)
+                  .slice(0, 4)
+          }
+        />
       </div>
     </main>
   );

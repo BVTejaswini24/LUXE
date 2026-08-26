@@ -13,6 +13,22 @@ type ProductDetailsProps = {
 const ProductDetails = ({ product }: ProductDetailsProps) => {
   const specsData: SpecItem[] = [
     {
+      label: "Brand",
+      value: product?.brand ?? "LUXE",
+    },
+    {
+      label: "Category",
+      value: product?.category
+        ? product.category.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : "Clothing",
+    },
+    {
+      label: "Gender",
+      value: product?.gender
+        ? product.gender.charAt(0).toUpperCase() + product.gender.slice(1)
+        : "Unisex",
+    },
+    {
       label: "Material composition",
       value: product?.material ?? "100% Cotton",
     },
@@ -28,6 +44,14 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
       label: "Pattern",
       value: product?.pattern ?? "Solid",
     },
+    ...(product?.sku
+      ? [
+          {
+            label: "SKU",
+            value: product.sku,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -40,7 +64,7 @@ const ProductDetails = ({ product }: ProductDetailsProps) => {
             </p>
           </div>
           <div className="col-span-2 py-3 lg:py-4 border-b">
-            <p className="text-sm w-full leading-7 text-neutral-800 font-medium">
+            <p className="text-sm w-full leading-7 text-neutral-800 font-medium capitalize">
               {item.value}
             </p>
           </div>
