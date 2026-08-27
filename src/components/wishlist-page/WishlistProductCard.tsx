@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types/product.types";
 import { Heart, ShoppingCart } from "lucide-react";
-import { useAppDispatch } from "@/lib/hooks/redux";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks/redux";
 import { removeFromWishlist } from "@/lib/features/wishlist/wishlistSlice";
-import { addToCart } from "@/lib/features/carts/cartsSlice";
+import { addToCart, CartItem } from "@/lib/features/carts/cartsSlice";
+import { RootState } from "@/lib/store";
+import { compareArrays } from "@/lib/utils";
 import { toast } from "sonner";
 import Rating from "@/components/ui/Rating";
 import { cn } from "@/lib/utils";
@@ -27,11 +29,13 @@ type WishlistProductCardProps = {
 
 const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
   const dispatch = useAppDispatch();
+  const cart = useAppSelector((state: RootState) => state.carts.cart);
   const isOutOfStock = data.stock !== undefined && data.stock <= 0;
 
   const [variantSheetOpen, setVariantSheetOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const hasSizes = data.sizes && data.sizes.length > 0;
   const hasColors = data.colors && data.colors.length > 0;
@@ -52,14 +56,11 @@ const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
     setVariantSheetOpen(true);
   };
 
-  const confirmAddToCart = () => {
-    const size = hasSizes
-      ? selectedSize || data.sizes![0].name
-      : "Default";
-    const color = hasColors
-      ? selectedColor || data.colors![0].name
-      : "Default";
-
+  const dispatchAddToCart = (
+    size: string,
+    color: string,
+    quantity: number
+  ) => {
     dispatch(
       addToCart({
         id: data.id,
@@ -71,34 +72,116 @@ const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
         size,
         color,
         discount: data.discount,
-        quantity: 1,
+        quantity,
+        stock: data.stock,
       })
     );
+  };
+
+  const confirmAddToCart = () => {
+    if (isAdding) return;
+    setIsAdding(true);
+
+    const size = hasSizes ? selectedSize : "Default";
+    const color = hasColors ? selectedColor : "Default";
+
+    if (hasSizes && !selectedSize) {
+      toast.error("Please select a size before adding to cart.");
+      setIsAdding(false);
+      return;
+    }
+
+    if (hasColors && !selectedColor) {
+      toast.error("Please select a color before adding to cart.");
+      setIsAdding(false);
+      return;
+    }
+
+    const stock = data.stock;
+    if (typeof stock === "number" && stock <= 0) {
+      toast.error("This product is out of stock.");
+      setIsAdding(false);
+      return;
+    }
+
+    const attributes = [size, color];
+    const existingItem = cart?.items.find(
+      (item: CartItem) =>
+        item.id === data.id && compareArrays(attributes, item.attributes)
+    );
+
+    const currentQty = existingItem?.quantity ?? 0;
+    const requestedQty = 1;
+
+    if (typeof stock === "number" && currentQty + requestedQty > stock) {
+      const remaining = stock - currentQty;
+      if (remaining <= 0) {
+        toast.error(
+          `You already have the maximum available quantity (${stock}) in your cart.`
+        );
+        setIsAdding(false);
+        return;
+      }
+      toast.error(`Only ${remaining} more available. Adding ${remaining} instead.`);
+      dispatchAddToCart(size, color, remaining);
+      setVariantSheetOpen(false);
+      toast.success(`${data.title} added to cart!`);
+      setIsAdding(false);
+      return;
+    }
+
+    dispatchAddToCart(size, color, requestedQty);
     setVariantSheetOpen(false);
-    toast("Added to cart");
+    toast.success(`${data.title} added to cart!`);
+    setIsAdding(false);
   };
 
   const handleAddToCart = () => {
+    if (isAdding) return;
     if (isOutOfStock) return;
-    if (requiresSelection) {
-      openVariantSheet();
-    } else {
-      dispatch(
-        addToCart({
-          id: data.id,
-          productId: data.id,
-          name: data.title,
-          srcUrl: data.srcUrl,
-          price: data.price,
-          attributes: ["Default", "Default"],
-          size: "Default",
-          color: "Default",
-          discount: data.discount,
-          quantity: 1,
-        })
-      );
-      toast("Added to cart");
+    setIsAdding(true);
+
+    const stock = data.stock;
+    if (typeof stock === "number" && stock <= 0) {
+      toast.error("This product is out of stock.");
+      setIsAdding(false);
+      return;
     }
+
+    if (requiresSelection) {
+      setIsAdding(false);
+      openVariantSheet();
+      return;
+    }
+
+    const attributes = ["Default", "Default"];
+    const existingItem = cart?.items.find(
+      (item: CartItem) =>
+        item.id === data.id && compareArrays(attributes, item.attributes)
+    );
+
+    const currentQty = existingItem?.quantity ?? 0;
+    const requestedQty = 1;
+
+    if (typeof stock === "number" && currentQty + requestedQty > stock) {
+      const remaining = stock - currentQty;
+      if (remaining <= 0) {
+        toast.error(
+          `You already have the maximum available quantity (${stock}) in your cart.`
+        );
+        setIsAdding(false);
+        return;
+      }
+      toast.error(`Only ${remaining} more available. Adding ${remaining} instead.`);
+      dispatchAddToCart("Default", "Default", remaining);
+      toast.success(`${data.title} added to cart!`);
+      setIsAdding(false);
+      return;
+    }
+
+    dispatchAddToCart("Default", "Default", requestedQty);
+    toast.success(`${data.title} added to cart!`);
+    setIsAdding(false);
   };
 
   const hasSelections = (!hasSizes || selectedSize) && (!hasColors || selectedColor);
@@ -177,11 +260,13 @@ const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
         </div>
         {isOutOfStock ? (
           <span className="text-sm text-red-500 font-medium mb-2">Out of Stock</span>
+        ) : typeof data.stock === "number" && data.stock > 0 && data.stock <= 5 ? (
+          <span className="text-sm text-orange-500 font-medium mb-2">Only {data.stock} left</span>
         ) : null}
         <button
           type="button"
           onClick={handleAddToCart}
-          disabled={isOutOfStock}
+          disabled={isOutOfStock || isAdding}
           aria-label={isOutOfStock ? `${data.title} is out of stock` : `Add ${data.title} to cart`}
           className={cn(
             "flex items-center justify-center gap-2 w-full rounded-full py-2.5 text-sm font-medium transition-all",
@@ -191,7 +276,7 @@ const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
           )}
         >
           <ShoppingCart size={16} />
-          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+          {isOutOfStock ? "Out of Stock" : isAdding ? "Adding..." : "Add to Cart"}
         </button>
       </div>
 
@@ -227,15 +312,15 @@ const WishlistProductCard = ({ data }: WishlistProductCardProps) => {
             <button
               type="button"
               onClick={confirmAddToCart}
-              disabled={!hasSelections}
+              disabled={!hasSelections || isAdding}
               className={cn(
                 "w-full rounded-full py-3 text-sm font-medium transition-all",
-                hasSelections
+                hasSelections && !isAdding
                   ? "bg-black text-white hover:bg-black/80"
                   : "bg-black/10 text-black/40 cursor-not-allowed"
               )}
             >
-              Confirm & Add to Cart
+              {isAdding ? "Adding..." : "Confirm & Add to Cart"}
             </button>
           </div>
         </SheetContent>
